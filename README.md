@@ -1,0 +1,1 @@
+Simple C++ neural network (image classifier)
