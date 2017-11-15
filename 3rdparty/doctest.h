@@ -610,12 +610,12 @@ namespace detail
         TestSuite& operator*(const char* in) {
             m_test_suite = in;
             // clear state
-            m_description       = 0;
+			m_description       = 0;
             m_skip              = false;
             m_may_fail          = false;
             m_should_fail       = false;
-            m_expected_failures = 0;
-            m_timeout           = 0;
+			m_expected_failures = 0;
+			m_timeout           = 0;
             return *this;
         }
 
@@ -718,7 +718,7 @@ public:
     String& operator=(String&& other);
 #endif // DOCTEST_CONFIG_WITH_RVALUE_REFERENCES
 
-    bool isOnStack() const { return (buf[last] & 128) == 0; }
+	bool isOnStack() const { return (buf[last] & 128) == 0; }
 
     char operator[](unsigned i) const { return const_cast<String*>(this)->operator[](i); } // NOLINT
     char& operator[](unsigned i) {
@@ -1681,7 +1681,7 @@ namespace detail
         if(!rb.m_result.m_passed || getTestsContextState()->success)
             rb.m_result.m_decomposition = stringifyBinaryExpr(lhs, ", ", rhs);
 
-        int res = 0;
+		int res = 0;
 
         if(rb.log())
             res |= assertAction::dbgbreak;
@@ -1715,7 +1715,7 @@ namespace detail
         if(!rb.m_result.m_passed || getTestsContextState()->success)
             rb.m_result.m_decomposition = toString(val);
 
-        int res = 0;
+		int res = 0;
 
         if(rb.log())
             res |= assertAction::dbgbreak;
@@ -1739,7 +1739,7 @@ namespace detail
     struct DOCTEST_INTERFACE IExceptionTranslator
     {
         virtual ~IExceptionTranslator() {}
-        virtual bool translate(String&) const = 0;
+		virtual bool translate(String&) const = 0;
     };
 
     template <typename T>
@@ -1834,7 +1834,7 @@ namespace detail
     struct IContextScope
     {
         virtual ~IContextScope() {}
-        virtual void build(std::ostream*) = 0;
+		virtual void build(std::ostream*) = 0;
     };
 
     DOCTEST_INTERFACE void addToContexts(IContextScope* ptr);
@@ -1849,7 +1849,7 @@ namespace detail
         struct ICapture
         {
             virtual ~ICapture() {}
-            virtual void toStream(std::ostream*) const = 0;
+			virtual void toStream(std::ostream*) const = 0;
         };
 
         template <typename T>
@@ -1881,7 +1881,7 @@ namespace detail
         Node* tail;
 
         void build(std::ostream* stream) const {
-            int curr = 0;
+			int curr = 0;
             // iterate over small buffer
             while(curr < numCaptures && curr < DOCTEST_CONFIG_NUM_CAPTURES_ON_STACK)
                 reinterpret_cast<const ICapture*>(stackChunks[curr++].buf)->toStream(stream);
@@ -1899,9 +1899,9 @@ namespace detail
                 : numCaptures(other.numCaptures)
                 , head(other.head)
                 , tail(other.tail) {
-            other.numCaptures = 0;
-            other.head        = 0;
-            other.tail        = 0;
+			other.numCaptures = 0;
+			other.head        = 0;
+			other.tail        = 0;
             my_memcpy(stackChunks, other.stackChunks,
                       unsigned(int(sizeof(Chunk)) * DOCTEST_CONFIG_NUM_CAPTURES_ON_STACK));
         }
@@ -1926,7 +1926,7 @@ namespace detail
                 my_memcpy(stackChunks[numCaptures].buf, &temp, sizeof(Chunk));
             } else {
                 Node* curr = new Node;
-                curr->next = 0;
+				curr->next = 0;
                 if(tail) {
                     tail->next = curr;
                     tail       = curr;
@@ -3344,7 +3344,7 @@ namespace detail
     void my_memcpy(void* dest, const void* src, unsigned num) {
         const char* csrc  = static_cast<const char*>(src);
         char*       cdest = static_cast<char*>(dest);
-        for(unsigned i = 0; i < num; ++i)
+		for(unsigned i = 0; i < num; ++i)
             cdest[i] = csrc[i];
     }
 
@@ -3475,12 +3475,12 @@ namespace detail
         bool                       subcasesHasSkipped;
 
         void resetRunData() {
-            numTestsPassingFilters                = 0;
-            numTestSuitesPassingFilters           = 0;
-            numFailed                             = 0;
-            numAssertions                         = 0;
-            numFailedAssertions                   = 0;
-            numFailedAssertionsForCurrentTestcase = 0;
+			numTestsPassingFilters                = 0;
+			numTestSuitesPassingFilters           = 0;
+			numFailed                             = 0;
+			numAssertions                         = 0;
+			numFailedAssertions                   = 0;
+			numFailedAssertionsForCurrentTestcase = 0;
         }
 
         // cppcheck-suppress uninitMemberVar
@@ -3491,7 +3491,7 @@ namespace detail
         }
     };
 
-    ContextState* contextState = 0;
+	ContextState* contextState = 0;
 #endif // DOCTEST_CONFIG_DISABLE
 } // namespace detail
 
@@ -3958,8 +3958,8 @@ namespace detail
     // matching of a string against a wildcard mask (case sensitivity configurable) taken from
     // http://www.emoticode.net/c/simple-wildcard-string-compare-globbing-function.html
     int wildcmp(const char* str, const char* wild, bool caseSensitive) {
-        const char* cp = 0;
-        const char* mp = 0;
+		const char* cp = 0;
+		const char* mp = 0;
 
         // rolled my own tolower() to not include more headers
         while((*str) && (*wild != '*')) {
@@ -4008,7 +4008,7 @@ namespace detail
                     bool caseSensitive) {
         if(filters.empty() && matchEmpty)
             return true;
-        for(unsigned i = 0; i < filters.size(); ++i)
+		for(unsigned i = 0; i < filters.size(); ++i)
             if(wildcmp(name, filters[i].c_str(), caseSensitive))
                 return true;
         return false;
@@ -4019,7 +4019,7 @@ namespace detail
     typedef unsigned long long UInt64;
 
     UInt64 getCurrentTicks() {
-        static UInt64 hz = 0, hzo = 0;
+		static UInt64 hz = 0, hzo = 0;
         if(!hz) {
             QueryPerformanceFrequency(reinterpret_cast<LARGE_INTEGER*>(&hz));
             QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&hzo));
@@ -4315,7 +4315,7 @@ namespace detail
 #ifndef DOCTEST_CONFIG_NO_EXCEPTIONS
         String                                    res;
         std::vector<const IExceptionTranslator*>& translators = getExceptionTranslators();
-        for(size_t i = 0; i < translators.size(); ++i)
+		for(size_t i = 0; i < translators.size(); ++i)
             if(translators[i]->translate(res))
                 return res;
         // clang-format off
@@ -4417,7 +4417,7 @@ namespace detail
     struct FatalConditionHandler
     {
         static LONG CALLBACK handleVectoredException(PEXCEPTION_POINTERS ExceptionInfo) {
-            for(size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
+			for(size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
                 if(ExceptionInfo->ExceptionRecord->ExceptionCode == signalDefs[i].id) {
                     reportFatal(signalDefs[i].name);
                 }
@@ -4432,7 +4432,7 @@ namespace detail
             // 32k seems enough for doctest to handle stack overflow,
             // but the value was found experimentally, so there is no strong guarantee
             guaranteeSize          = 32 * 1024;
-            exceptionHandlerHandle = 0;
+			exceptionHandlerHandle = 0;
             // Register as first handler in current chain
             exceptionHandlerHandle = AddVectoredExceptionHandler(1, handleVectoredException);
             // Pass in guarantee size to be filled
@@ -4444,7 +4444,7 @@ namespace detail
                 // Unregister handler and restore the old guarantee
                 RemoveVectoredExceptionHandler(exceptionHandlerHandle);
                 SetThreadStackGuarantee(&guaranteeSize);
-                exceptionHandlerHandle = 0;
+				exceptionHandlerHandle = 0;
                 isSet                  = false;
             }
         }
@@ -4458,8 +4458,8 @@ namespace detail
     };
 
     bool  FatalConditionHandler::isSet                  = false;
-    ULONG FatalConditionHandler::guaranteeSize          = 0;
-    PVOID FatalConditionHandler::exceptionHandlerHandle = 0;
+	ULONG FatalConditionHandler::guaranteeSize          = 0;
+	PVOID FatalConditionHandler::exceptionHandlerHandle = 0;
 
 #else // DOCTEST_PLATFORM_WINDOWS
 
@@ -4484,7 +4484,7 @@ namespace detail
 
         static void handleSignal(int sig) {
             std::string name = "<unknown signal>";
-            for(std::size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
+			for(std::size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
                 SignalDefs& def = signalDefs[i];
                 if(sig == def.id) {
                     name = def.name;
@@ -4501,13 +4501,13 @@ namespace detail
             stack_t sigStack;
             sigStack.ss_sp    = altStackMem;
             sigStack.ss_size  = SIGSTKSZ;
-            sigStack.ss_flags = 0;
+			sigStack.ss_flags = 0;
             sigaltstack(&sigStack, &oldSigStack);
             struct sigaction sa = {0};
 
             sa.sa_handler = handleSignal; // NOLINT
             sa.sa_flags   = SA_ONSTACK;
-            for(std::size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
+			for(std::size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
                 sigaction(signalDefs[i].id, &sa, &oldSigActions[i]);
             }
         }
@@ -4516,7 +4516,7 @@ namespace detail
         static void reset() {
             if(isSet) {
                 // Set signals back to previous values -- hopefully nobody overwrote them in the meantime
-                for(std::size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
+				for(std::size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
                     sigaction(signalDefs[i].id, &oldSigActions[i], 0);
                 }
                 // Return the old stack
@@ -4570,7 +4570,7 @@ namespace detail
         size_t     size;
         // Initialize the flags so that, if sysctl fails for some bizarre
         // reason, we get a predictable result.
-        info.kp_proc.p_flag = 0;
+		info.kp_proc.p_flag = 0;
         // Initialize mib, which tells sysctl the info we want, in this case
         // we're looking for information about a specific process ID.
         mib[0] = CTL_KERN;
@@ -4588,7 +4588,7 @@ namespace detail
         return ((info.kp_proc.p_flag & P_TRACED) != 0);
     }
 #elif DOCTEST_MSVC || defined(__MINGW32__)
-    bool  isDebuggerActive() { return ::IsDebuggerPresent() != 0; }
+	bool  isDebuggerActive() { return ::IsDebuggerPresent() != 0; }
 #else
     bool isDebuggerActive() { return false; }
 #endif // Platform
@@ -4661,7 +4661,7 @@ namespace detail
 
         String                subcaseStuff;
         std::vector<Subcase>& subcasesStack = contextState->subcasesStack;
-        for(unsigned i = 0; i < subcasesStack.size(); ++i) {
+		for(unsigned i = 0; i < subcasesStack.size(); ++i) {
             if(subcasesStack[i].m_signature.m_name[0] != '\0') {
                 char subcase[DOCTEST_SNPRINTF_BUFFER_LENGTH];
                 DOCTEST_SNPRINTF(subcase, DOCTEST_COUNTOF(loc), "  %s\n",
@@ -4686,8 +4686,8 @@ namespace detail
 
         char info1[DOCTEST_SNPRINTF_BUFFER_LENGTH];
         char info2[DOCTEST_SNPRINTF_BUFFER_LENGTH];
-        info1[0] = 0;
-        info2[0] = 0;
+		info1[0] = 0;
+		info2[0] = 0;
         DOCTEST_SNPRINTF(info1, DOCTEST_COUNTOF(info1),
                          crash ? "crashed:\n" : "threw exception:\n");
         DOCTEST_SNPRINTF(info2, DOCTEST_COUNTOF(info2), "  %s\n", what.c_str());
@@ -4717,7 +4717,7 @@ namespace detail
         std::vector<IContextScope*>& contexts = contextState->contexts;
         if(!contexts.empty())
             stream << "with context:\n";
-        for(size_t i = 0; i < contexts.size(); ++i) {
+		for(size_t i = 0; i < contexts.size(); ++i) {
             stream << "  ";
             contexts[i]->build(&stream);
             stream << "\n";
@@ -4751,8 +4751,8 @@ namespace detail
 
         char info2[DOCTEST_SNPRINTF_BUFFER_LENGTH];
         char info3[DOCTEST_SNPRINTF_BUFFER_LENGTH];
-        info2[0] = 0;
-        info3[0] = 0;
+		info2[0] = 0;
+		info3[0] = 0;
         if(threw) {
             DOCTEST_SNPRINTF(info2, DOCTEST_COUNTOF(info2), "threw exception:\n");
             DOCTEST_SNPRINTF(info3, DOCTEST_COUNTOF(info3), "  %s\n", exception.c_str());
@@ -4791,7 +4791,7 @@ namespace detail
                          getAssertString(assert_type), expr);
 
         char info2[DOCTEST_SNPRINTF_BUFFER_LENGTH];
-        info2[0] = 0;
+		info2[0] = 0;
 
         if(!threw)
             DOCTEST_SNPRINTF(info2, DOCTEST_COUNTOF(info2), "didn't throw at all\n");
@@ -4826,8 +4826,8 @@ namespace detail
 
         char info2[DOCTEST_SNPRINTF_BUFFER_LENGTH];
         char info3[DOCTEST_SNPRINTF_BUFFER_LENGTH];
-        info2[0] = 0;
-        info3[0] = 0;
+		info2[0] = 0;
+		info3[0] = 0;
 
         if(!threw) { //!OCLINT inverted logic
             DOCTEST_SNPRINTF(info2, DOCTEST_COUNTOF(info2), "didn't throw at all\n");
@@ -4866,8 +4866,8 @@ namespace detail
 
         char info2[DOCTEST_SNPRINTF_BUFFER_LENGTH];
         char info3[DOCTEST_SNPRINTF_BUFFER_LENGTH];
-        info2[0] = 0;
-        info3[0] = 0;
+		info2[0] = 0;
+		info3[0] = 0;
         if(threw) {
             DOCTEST_SNPRINTF(info2, DOCTEST_COUNTOF(info2), "threw exception:\n");
             DOCTEST_SNPRINTF(info3, DOCTEST_COUNTOF(info3), "  %s\n", exception.c_str());
@@ -5008,7 +5008,7 @@ namespace detail
 
     // the implementation of parseFlag()
     bool parseFlagImpl(int argc, const char* const* argv, const char* pattern) {
-        for(int i = argc - 1; i >= 0; --i) {
+		for(int i = argc - 1; i >= 0; --i) {
             const char* temp = std::strstr(argv[i], pattern);
             if(temp && my_strlen(temp) == my_strlen(pattern)) {
                 // eliminate strings in which the chars before the option are not '-'
@@ -5039,7 +5039,7 @@ namespace detail
 
     // the implementation of parseOption()
     bool parseOptionImpl(int argc, const char* const* argv, const char* pattern, String& res) {
-        for(int i = argc - 1; i >= 0; --i) {
+		for(int i = argc - 1; i >= 0; --i) {
             const char* temp = std::strstr(argv[i], pattern);
             if(temp) { //!OCLINT prefer early exits and continue
                 // eliminate matches in which the chars before the option are not '-'
@@ -5116,13 +5116,13 @@ namespace detail
             const char negative[][6] = {"0", "false", "off", "no"}; // 6 - strlen("false") + 1
 
             // if the value matches any of the positive/negative possibilities
-            for(unsigned i = 0; i < 4; i++) {
+			for(unsigned i = 0; i < 4; i++) {
                 if(parsedValue.compare(positive[i], true) == 0) {
                     res = 1; //!OCLINT parameter reassignment
                     return true;
                 }
                 if(parsedValue.compare(negative[i], true) == 0) {
-                    res = 0; //!OCLINT parameter reassignment
+					res = 0; //!OCLINT parameter reassignment
                     return true;
                 }
             }
@@ -5321,7 +5321,7 @@ void Context::parseArgs(int argc, const char* const* argv, bool withDefaults) {
     parseCommaSepArgs(argc, argv, "dt-sce=",                p->filters[7]);
     // clang-format on
 
-    int    intRes = 0;
+	int    intRes = 0;
     String strRes;
 
 #define DOCTEST_PARSE_AS_BOOL_OR_FLAG(name, sname, var, default)                                   \
@@ -5412,7 +5412,7 @@ void Context::addFilter(const char* filter, const char* value) { setOption(filte
 
 // allows the user to clear all filters from the command line
 void Context::clearFilters() {
-    for(unsigned i = 0; i < p->filters.size(); ++i)
+	for(unsigned i = 0; i < p->filters.size(); ++i)
         p->filters[i].clear();
 }
 
@@ -5447,7 +5447,7 @@ int Context::run() {
         if(p->help)
             printHelp();
 
-        contextState = 0;
+		contextState = 0;
 
         return EXIT_SUCCESS;
     }
@@ -5456,7 +5456,7 @@ int Context::run() {
     DOCTEST_PRINTF_COLORED("[doctest] ", Color::Cyan);
     std::printf("run with \"--help\" for options\n");
 
-    unsigned i = 0; // counter used for loops - here for VC6
+	unsigned i = 0; // counter used for loops - here for VC6
 
     std::set<TestCase>& registeredTests = getRegisteredTests();
 
@@ -5503,7 +5503,7 @@ int Context::run() {
     }
 
     // invoke the registered functions if they match the filter criteria (or just count them)
-    for(i = 0; i < testArray.size(); i++) {
+	for(i = 0; i < testArray.size(); i++) {
         const TestCase& data = *testArray[i];
 
         if(data.m_skip && !p->no_skip)
@@ -5556,9 +5556,9 @@ int Context::run() {
 
             bool failed                              = false;
             p->hasLoggedCurrentTestStart             = false;
-            p->numFailedAssertionsForCurrentTestcase = 0;
+			p->numFailedAssertionsForCurrentTestcase = 0;
             p->subcasesPassed.clear();
-            double duration = 0;
+			double duration = 0;
             Timer  timer;
             timer.start();
             do {
@@ -5572,12 +5572,12 @@ int Context::run() {
                     DOCTEST_LOG_START();
 
                 // reset the assertion state
-                p->numAssertionsForCurrentTestcase = 0;
+				p->numAssertionsForCurrentTestcase = 0;
                 p->hasCurrentTestFailed            = false;
 
                 // reset some of the fields for subcases (except for the set of fully passed ones)
                 p->subcasesHasSkipped   = false;
-                p->subcasesCurrentLevel = 0;
+				p->subcasesCurrentLevel = 0;
                 p->subcasesEnteredLevels.clear();
 
                 // reset stuff for logging with INFO()
@@ -5679,7 +5679,7 @@ int Context::run() {
 
     printSummary();
 
-    contextState = 0;
+	contextState = 0;
 
     if(p->numFailed && !p->no_exitcode)
         return EXIT_FAILURE;

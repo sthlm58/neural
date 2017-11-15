@@ -8,25 +8,26 @@
 #include <functional>
 #include <sstream>
 
-#include "dataLoad.h"
+#include "mnist_reader.h"
 
 #include "doctest.h"
 
-namespace doctest {
-template <typename T>
-String toString(const std::vector<T>& v)
+namespace doctest
 {
-	std::stringstream interp;
-	interp << "[";
-	for (std::size_t i = 0; i < v.size(); i++)
+	template <typename T>
+	String toString(const std::vector<T>& v)
 	{
-		if (i > 0) interp << ",";
-		interp << v[i];
-	}
-	interp << "]";
+		std::stringstream interp;
+		interp << "[";
+		for (std::size_t i {}; i < v.size(); i++)
+		{
+			if (i > 0) interp << ",";
+			interp << v[i];
+		}
+		interp << "]";
 
-	return interp.str().c_str();
-}
+		return interp.str().c_str();
+	}
 }
 
 
@@ -49,6 +50,8 @@ TEST_CASE("architecture")
 	CHECK(arch.size() == 3);
 	CHECK(arch == std::vector<std::size_t>{2, 3, 4});
 	CHECK(n.layers[1].neurons[0].weights[0] != n.layers[1].neurons[1].weights[0]);
+
+	CHECK_THROWS(Network{{}});
 }
 
 TEST_CASE("sigmoid")
@@ -68,23 +71,23 @@ TEST_CASE("basic feed forward")
 	n.layers[1].neurons[0].bias = -1;
 	n.layers[1].neurons[1].weights[0] = 0.5;
 	n.layers[1].neurons[1].weights[1] = 0.5;
-	n.layers[1].neurons[1].bias = -1;
+	n.layers[1].neurons[1].bias = 0.0;
 	n.layers[2].neurons[0].weights[0] = 0.5;
 	n.layers[2].neurons[0].weights[1] = 0.5;
 	n.layers[2].neurons[0].bias = -0.5;
 
 	auto result = n.feedForward({1.0, 1.0});
-	CHECK(result[0] == 0.5);
+	CHECK(result[0] == 0);
 }
 
-TEST_CASE("same in")
+TEST_CASE("learn only one sample")
 {
-	Network n({4, 2, 2});
+	Network n({4, 2, 2}, &misc::sigmoid, &misc::sigmoidPrime, 3.);
 
 	std::vector<double> in { 0, 1, 0, 1 };
 	std::vector<double> out { 1, 1 };
 
-	for (int epoch = 0; epoch < 10; epoch++)
+	for (int epoch {}; epoch < 10; epoch++)
 	{
 		n.learnOnce(in, out);
 	}
@@ -96,31 +99,31 @@ TEST_CASE("same in")
 
 TEST_CASE("images")
 {
-	Network n({784, 30, 10});
+	Network n({784, 30, 10}, &misc::leakyRelu, &misc::leakyReluPrime, 0.003);
 
-	auto data = dataLoad();
+	auto data = mnist::readTrainingData("d:/dev/cpp/handreco-data/");
 
-	const auto& image = data.first.front();
-	const auto& label = misc::vectorized<10>(data.second.front());
+	const auto& image = data.images.front();
+	const auto& label = misc::vectorized<10>(data.labels.front());
 
-	for (int epoch = 0; epoch < 100; epoch++)
+	for (int epoch {}; epoch < 20; epoch++)
 	{
 		n.learnOnce(image, label);
-
-
 	}
 
 	const auto result = n.feedForward(image);
-	CHECK(misc::argmax(result) == data.second.front());
+	CHECK(misc::argmax(result) == data.labels.front());
 
 
 }
 
-
-Network::Network(const std::vector<size_t>& architecture, double learningRate)
-	: learningRate(learningRate)
+Network::Network(const Architecture& architecture, ActivationFunction activation, ActivationFunction activationDerivative, double learningRate)
+	: activationFunction(std::move(activation))
+	, activationFunctionDerivative(std::move(activationDerivative))
+	, learningRate(learningRate)
 {
-	for (std::size_t i = 0; i < architecture.size(); i++)
+	if (architecture.size() <= 1) throw std::runtime_error("Not enough layers");
+	for (std::size_t i {}; i < architecture.size(); i++)
 	{
 		const std::size_t& layer_size = architecture[i];
 		if (i == 0)
@@ -134,8 +137,7 @@ Network::Network(const std::vector<size_t>& architecture, double learningRate)
 		}
 	}
 }
-
-std::vector<size_t> Network::architecture() const
+Architecture Network::architecture() const
 {
 	std::vector<std::size_t> result;
 	std::transform(layers.begin(), layers.end(), std::back_inserter(result), [](const auto& layer) { return layer.neurons.size(); });
@@ -157,16 +159,16 @@ double Network::error(const std::vector<double>& input, const std::vector<double
 
 std::vector<double> Network::feedForward(const std::vector<double>& input)
 {
-	layers[0].assignActivations(input);
+	layers[0].setActivations(input);
 
 	for (std::size_t l = 1; l < layers.size(); l++)
 	{
 		auto& current_layer_neurons = layers[l].neurons;
 		auto& previous_layer_neurons = layers[l - 1].neurons;
-		for (std::size_t n = 0; n < current_layer_neurons.size(); n++)
+		for (std::size_t n {}; n < current_layer_neurons.size(); n++)
 		{
 			current_layer_neurons[n].z = {};
-			for (std::size_t pn = 0; pn < previous_layer_neurons.size(); pn++)
+			for (std::size_t pn {}; pn < previous_layer_neurons.size(); pn++)
 			{
 				current_layer_neurons[n].z += current_layer_neurons[n].weights[pn] * previous_layer_neurons[pn].activation;
 			}
@@ -240,7 +242,7 @@ Layer::Layer(size_t size, size_t previousLayerSize)
 {
 }
 
-void Layer::assignActivations(const std::vector<double>& activations)
+void Layer::setActivations(const std::vector<double>& activations)
 {
 	for (size_t i{}; i < activations.size(); ++i)
 	{
@@ -259,8 +261,8 @@ std::vector<double> Layer::activations() const
 	return activations;
 }
 
-Neuron::Neuron(size_t incomingWeights)
-	: weights{ misc::randomNormalVector(incomingWeights) }
+Neuron::Neuron(size_t inputs)
+	: weights{ misc::randomNormalVector(inputs) }
 	, bias { misc::randomNormal() }
 {
 }

@@ -1,6 +1,6 @@
 #include "network.h"
 
-#include "dataLoad.h"
+#include "mnist_reader.h"
 #include "misc.h"
 
 #include <iostream>
@@ -8,19 +8,18 @@
 
 #ifdef DOCTEST_CONFIG_DISABLE
 
-int main(
-		)
+int main()
 {
 
 	Network n({784, 30, 10}, 0.003);
 
-	auto data = dataLoad();
+	auto data = mnist::readTrainingData("d:/dev/cpp/handreco-data/");
 
-	auto test_data = ImagesData(data.first.begin(), data.first.begin() + 50000);
-	auto test_labels = Labels(data.second.begin(), data.second.begin() + 50000);
+	auto test_data = ImagesData(data.images.begin(), data.images.begin() + 50000);
+	auto test_labels = Labels(data.labels.begin(), data.labels.begin() + 50000);
 
-	auto verification_data = ImagesData(data.first.begin() + 50000, data.first.end());
-	auto verification_labels = Labels(data.second.begin() + 50000, data.second.end());
+	auto verification_data = ImagesData(data.images.begin() + 50000, data.images.end());
+	auto verification_labels = Labels(data.labels.begin() + 50000, data.labels.end());
 
 	int correct1 {};
 	for (std::size_t d{}; d < verification_data.size(); ++d)
@@ -38,7 +37,7 @@ int main(
 //		std::cout << "Result: " << correct << " / " << verification_data.size() << "\n\n";
 	std::cout << correct1 << "," ;
 
-	for (int epoch = 0; epoch < 1000; epoch++)
+	for (int epoch {}; epoch < 1000; epoch++)
 	{
 		std::cout << std::setprecision(2);
 		for (std::size_t d{}; d < test_data.size(); ++d)

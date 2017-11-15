@@ -3,14 +3,20 @@ import qbs
 Project {
 
     CppApplication {
-        Depends { name: "Qt"; submodules: ["core", "widgets" ] }
         cpp.cxxLanguageVersion: "c++17"
 
-        cpp.defines: [ "DOCTEST_CONFIG_DISABLE" ]
+//        cpp.defines: [ "DOCTEST_CONFIG_DISABLE" ]
         cpp.debugInformation: true
 
         consoleApplication: true
 
+        cpp.includePaths: [ "3rdparty" ]
+
+        Group {
+            name: "3rdparty"
+            prefix: "3rdparty/"
+            files: "*.h"
+        }
         Group {
             name: "headers"
             files: "*.h"
