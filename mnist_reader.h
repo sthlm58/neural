@@ -16,8 +16,8 @@ namespace mnist
 
 	struct Data
 	{
-		static const int Inputs = ImagePixelCount;
-		static const int Output = 10;
+		static const std::size_t Inputs = ImagePixelCount;
+		static const std::size_t Outputs = 10;
 
 		ImagesData images;
 		Labels labels;

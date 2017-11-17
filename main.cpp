@@ -3,80 +3,61 @@
 #include "mnist_reader.h"
 #include "misc.h"
 
+#include <chrono>
 #include <iostream>
 #include <iomanip>
 
 #ifdef DOCTEST_CONFIG_DISABLE
 
-int main()
+int verify(const Network& n, const std::vector<std::vector<double>>& input, const std::vector<int>& labels)
 {
-
-	Network n({784, 30, 10}, 0.003);
-
-	auto data = mnist::readTrainingData("d:/dev/cpp/handreco-data/");
-
-	auto test_data = ImagesData(data.images.begin(), data.images.begin() + 50000);
-	auto test_labels = Labels(data.labels.begin(), data.labels.begin() + 50000);
-
-	auto verification_data = ImagesData(data.images.begin() + 50000, data.images.end());
-	auto verification_labels = Labels(data.labels.begin() + 50000, data.labels.end());
-
-	int correct1 {};
-	for (std::size_t d{}; d < verification_data.size(); ++d)
+	int correct {};
+	for (std::size_t d{}; d < input.size(); ++d)
 	{
-		const auto& image = verification_data[d];
+		const auto& image = input[d];
 		const auto result = n.feedForward(image);
 
-		if (misc::argmax(result) == verification_labels[d])
+		if (misc::argmax(result) == labels[d])
 		{
-			correct1++;
+			correct++;
 		}
-
 	}
 
-//		std::cout << "Result: " << correct << " / " << verification_data.size() << "\n\n";
-	std::cout << correct1 << "," ;
+	return correct;
+}
+
+int main()
+{
+	auto data = mnist::readTrainingData("d:/dev/cpp/handreco-data/");
+
+	static const std::size_t HIDDEN_UNITS = 10;
+	Network n({mnist::Data::Inputs, HIDDEN_UNITS, mnist::Data::Outputs},
+			  misc::leakyRelu, misc::leakyReluPrime, 0.003);
+
+	static const std::size_t LEARNING_SAMPLES = 50000;
+
+	const auto test_data = mnist::ImagesData(data.images.begin(), data.images.begin() + LEARNING_SAMPLES);
+	const auto test_labels = mnist::Labels(data.labels.begin(), data.labels.begin() + LEARNING_SAMPLES);
+
+	const auto verification_data = mnist::ImagesData(data.images.begin() + LEARNING_SAMPLES, data.images.end());
+	const auto verification_labels = mnist::Labels(data.labels.begin() + LEARNING_SAMPLES, data.labels.end());
+
+	std::cout << "before: " << verify(n, verification_data, verification_labels) << std::endl;
 
 	for (int epoch {}; epoch < 1000; epoch++)
 	{
-		std::cout << std::setprecision(2);
+		auto before = std::chrono::high_resolution_clock::now();
 		for (std::size_t d{}; d < test_data.size(); ++d)
 		{
 			const auto& image = test_data[d];
 			const auto& label = misc::vectorized<10>(test_labels[d]);
 			n.learnOnce(image, label);
-
-			if (d % 1000 == 0)
-			{
-//				std::cout << "\r" << "                                 ";
-//				std::cout << "\r" << "Epoch " << epoch << " [" << d * 100. / test_data.size() << "%]";
-			}
-
-
-		//		std::cout << "Result: " << correct << " / " << verification_data.size() << "\n\n";
-
 		}
-		int correct {};
-		for (std::size_t d{}; d < verification_data.size(); ++d)
-		{
-			const auto& image = verification_data[d];
-			const auto result = n.feedForward(image);
+		auto after = std::chrono::high_resolution_clock::now();
 
-			if (misc::argmax(result) == verification_labels[d])
-			{
-				correct++;
-			}
-
-		}
-		std::cout << correct << "," << std::flush;
-
-//		std::cout << "\r" << "                                 " << "\r";
-//		std::cout << "Epoch " << epoch << " done.\n";
-
+		std::cout << "epoch " << epoch + 1 << ": " << verify(n, verification_data, verification_labels)
+				  << " after " << std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count() << " ms" << std::endl;
 	}
-
-
-//	const auto result = n.feedForward(image);
 }
 
 #endif
