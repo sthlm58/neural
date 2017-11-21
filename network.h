@@ -1,7 +1,6 @@
 #pragma once
 
-#include "mnist_reader.h"
-#include "misc.h"
+#include "util.h"
 
 #include <vector>
 #include <functional>
@@ -31,6 +30,7 @@ struct Layer
 	std::vector<double> activations() const;
 
 	std::vector<Neuron> neurons {};
+	std::vector<double> errors {};
 };
 
 
@@ -39,8 +39,8 @@ class Network
 public:
 
 	Network(const Architecture& architecture,
-			ActivationFunction activation = &misc::identity,
-			ActivationFunction activationDerivative = &misc::identityPrime,
+			ActivationFunction activation = &util::identity,
+			ActivationFunction activationDerivative = &util::identityPrime,
 			double learningRate = 0.3);
 
 	Architecture architecture() const;
@@ -51,12 +51,10 @@ public:
 
 	std::vector<Layer> layers {};
 
-
-
 protected:
-	void correctWeightAndBiases(std::vector<std::vector<double>>& errors);
-	void calculateInnerLayersError(std::vector<std::vector<double> >& errors);
-	void calculateLastLayerError(std::vector<std::vector<double> >& errors, const std::vector<double>& output);
+	void calculateLastLayerError(const std::vector<double>& expected);
+	void calculateInnerLayersError();
+	void correctWeightAndBiases();
 
 private:
 

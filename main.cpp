@@ -1,63 +1,65 @@
 #include "network.h"
 
 #include "mnist_reader.h"
-#include "misc.h"
+#include "mnist_custom_reader.h"
+#include "util.h"
 
 #include <chrono>
 #include <iostream>
 #include <iomanip>
 
-#ifdef DOCTEST_CONFIG_DISABLE
-
-int verify(const Network& n, const std::vector<std::vector<double>>& input, const std::vector<int>& labels)
+std::pair<std::size_t, std::size_t> results(const Network& n, const std::vector<std::vector<double>>& input, const std::vector<int>& labels)
 {
-	int correct {};
+	std::size_t correct {};
 	for (std::size_t d{}; d < input.size(); ++d)
 	{
 		const auto& image = input[d];
 		const auto result = n.feedForward(image);
 
-		if (misc::argmax(result) == labels[d])
+		if (util::argmax(result) == labels[d])
 		{
 			correct++;
 		}
 	}
 
-	return correct;
+	return { correct, input.size() };
 }
 
 int main()
 {
 	auto data = mnist::readTrainingData("d:/dev/cpp/handreco-data/");
 
-	static const std::size_t HIDDEN_UNITS = 10;
+	static const std::size_t HIDDEN_UNITS = 50;
+	static const double LEARNING_FACTOR = 0.003;
 	Network n({mnist::Data::Inputs, HIDDEN_UNITS, mnist::Data::Outputs},
-			  misc::leakyRelu, misc::leakyReluPrime, 0.003);
+			  util::leakyRelu, util::leakyReluPrime, LEARNING_FACTOR);
 
 	static const std::size_t LEARNING_SAMPLES = 50000;
 
-	const auto test_data = mnist::ImagesData(data.images.begin(), data.images.begin() + LEARNING_SAMPLES);
-	const auto test_labels = mnist::Labels(data.labels.begin(), data.labels.begin() + LEARNING_SAMPLES);
+	const auto learning_data = mnist::ImagesData(data.images.begin(), data.images.begin() + LEARNING_SAMPLES);
+	const auto learning_labels = mnist::Labels(data.labels.begin(), data.labels.begin() + LEARNING_SAMPLES);
 
 	const auto verification_data = mnist::ImagesData(data.images.begin() + LEARNING_SAMPLES, data.images.end());
 	const auto verification_labels = mnist::Labels(data.labels.begin() + LEARNING_SAMPLES, data.labels.end());
 
-	std::cout << "before: " << verify(n, verification_data, verification_labels) << std::endl;
+	std::cout << "before: " << results(n, verification_data, verification_labels).first << std::endl;
 
-	for (int epoch {}; epoch < 1000; epoch++)
+	for (int epoch {}; epoch < 3; epoch++)
 	{
 		auto before = std::chrono::high_resolution_clock::now();
-		for (std::size_t d{}; d < test_data.size(); ++d)
+		for (const auto& learning_sample : util::zip(learning_data, learning_labels))
 		{
-			const auto& image = test_data[d];
-			const auto& label = misc::vectorized<10>(test_labels[d]);
+			const auto& image = learning_sample.first;
+			const auto& label = util::vectorized<mnist::Data::Outputs>(learning_sample.second);
 			n.learnOnce(image, label);
 		}
 		auto after = std::chrono::high_resolution_clock::now();
 
-		std::cout << "epoch " << epoch + 1 << ": " << verify(n, verification_data, verification_labels)
+		std::cout << "epoch " << epoch + 1 << ": " << results(n, verification_data, verification_labels).first
 				  << " after " << std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count() << " ms" << std::endl;
 	}
-}
 
-#endif
+	auto own = mnist::custom::readImagesMatching("d:/dev/cpp/handreco-data", "?__*.*");
+	auto own_results = results(n, own.images, own.labels);
+	std::cout << "own images: " << own_results.first << "/" << own_results.second << std::endl;
+}

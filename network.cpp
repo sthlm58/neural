@@ -1,35 +1,8 @@
 #include "network.h"
 
-#include <vector>
-#include <iostream>
-#include <random>
-#include <algorithm>
 #include <iterator>
-#include <functional>
-#include <sstream>
-
-#include "mnist_reader.h"
-
-#include "doctest.h"
-
-namespace doctest
-{
-	template <typename T>
-	String toString(const std::vector<T>& v)
-	{
-		std::stringstream interp;
-		interp << "[";
-		for (std::size_t i {}; i < v.size(); i++)
-		{
-			if (i > 0) interp << ",";
-			interp << v[i];
-		}
-		interp << "]";
-
-		return interp.str().c_str();
-	}
-}
-
+#include <algorithm>
+#include <numeric>
 
 
 Network::Network(const Architecture& architecture, ActivationFunction activation, ActivationFunction activationDerivative, double learningRate)
@@ -40,16 +13,10 @@ Network::Network(const Architecture& architecture, ActivationFunction activation
 	if (architecture.size() <= 1) throw std::runtime_error("Not enough layers");
 	for (std::size_t i {}; i < architecture.size(); i++)
 	{
+		const std::size_t& previous_layer_size = (i > 0) ? architecture[i - 1] : 0;
 		const std::size_t& layer_size = architecture[i];
-		if (i == 0)
-		{
-			layers.push_back(Layer{layer_size});
-		}
-		else
-		{
-			const std::size_t& previous_layer_size = architecture[i - 1];
-			layers.push_back(Layer{layer_size, previous_layer_size});
-		}
+
+		layers.push_back(Layer{layer_size, previous_layer_size});
 	}
 }
 Architecture Network::architecture() const
@@ -62,12 +29,13 @@ Architecture Network::architecture() const
 double Network::error(const std::vector<double>& input, const std::vector<double>& output)
 {
 	const auto result = feedForward(input);
-	double sum_squared_error {};
-	for (std::size_t i {}; i < output.size(); i++)
+
+	auto output_result = util::zip(output, result);
+	const double sum_squared_error = std::accumulate(output_result.begin(), output_result.end(), 0., [](auto acc, auto output_pair)
 	{
-		const double error = output[i] - result[i];
-		sum_squared_error += error * error;
-	}
+		const double error = output_pair.first - output_pair.second;
+		return acc + error * error;
+	});
 
 	return std::sqrt(sum_squared_error / output.size());
 }
@@ -76,10 +44,10 @@ std::vector<double> Network::feedForward(const std::vector<double>& input) const
 {
 	layers[0].applyActivations(input);
 
-	for (std::size_t l = 1; l < layers.size(); l++)
+	for (std::size_t layer = 1; layer < layers.size(); layer++)
 	{
-		auto& current_layer_neurons = layers[l].neurons;
-		auto& previous_layer_neurons = layers[l - 1].neurons;
+		auto& current_layer_neurons = layers[layer].neurons;
+		auto& previous_layer_neurons = layers[layer - 1].neurons;
 		for (std::size_t n {}; n < current_layer_neurons.size(); n++)
 		{
 			current_layer_neurons[n].z = {};
@@ -95,27 +63,27 @@ std::vector<double> Network::feedForward(const std::vector<double>& input) const
 	return layers.back().activations();
 }
 
-void Network::calculateLastLayerError(std::vector<std::vector<double>>& errors, const std::vector<double>& output)
+void Network::calculateLastLayerError(const std::vector<double>& expected)
 {
 	const auto& last_layer_neurons = layers.back().neurons;
-	auto& last_layer_errors = errors.back();
-	last_layer_errors.resize(layers.back().neurons.size());
+	auto& last_layer_errors = layers.back().errors;
+
 	for (std::size_t n {}; n < last_layer_neurons.size(); n++)
 	{
-		last_layer_errors[n] = (last_layer_neurons[n].activation - output[n]) * activationFunctionDerivative(last_layer_neurons[n].z);
+		last_layer_errors[n] = (last_layer_neurons[n].activation - expected[n]) * activationFunctionDerivative(last_layer_neurons[n].z);
 	}
 }
 
-void Network::calculateInnerLayersError(std::vector<std::vector<double>>& errors)
+void Network::calculateInnerLayersError()
 {
-	for (int l = layers.size() - 2; l >= 1; --l)
+	for (int layer = layers.size() - 2; layer >= 1; --layer)
 	{
-		const auto& current_layer_neurons = layers[l].neurons;
-		auto& current_layer_errors = errors[l];
+		const auto& current_layer_neurons = layers[layer].neurons;
+		auto& current_layer_errors = layers[layer].errors;
 		current_layer_errors.resize(current_layer_neurons.size());
 
-		const auto& next_layer_neurons = layers[l + 1].neurons;
-		const auto& next_layer_errors = errors[l + 1];
+		const auto& next_layer_neurons = layers[layer + 1].neurons;
+		const auto& next_layer_errors = layers[layer + 1].errors;
 
 		for (std::size_t n {}; n < current_layer_neurons.size(); n++)
 		{
@@ -129,18 +97,17 @@ void Network::calculateInnerLayersError(std::vector<std::vector<double>>& errors
 	}
 }
 
-void Network::correctWeightAndBiases(std::vector<std::vector<double>>& errors)
+void Network::correctWeightAndBiases()
 {
-	for (int l = layers.size() - 1; l >= 1; --l)
+	for (int layer = layers.size() - 1; layer >= 1; --layer)
 	{
-		auto& current_layer_neurons = layers[l].neurons;
-		const auto& current_layer_errors = errors[l];
-		const auto& previous_layer_neurons = layers[l - 1].neurons;
+		auto& current_layer_neurons = layers[layer].neurons;
+		const auto& current_layer_errors = layers[layer].errors;
+		const auto& previous_layer_neurons = layers[layer - 1].neurons;
 
 		for (std::size_t n {}; n < current_layer_neurons.size(); n++)
 		{
 			auto& current_neuron = current_layer_neurons[n];
-
 
 			for (std::size_t pn {}; pn < current_neuron.weights.size(); pn++)
 			{
@@ -158,17 +125,16 @@ void Network::learnOnce(const std::vector<double>& input, const std::vector<doub
 {
 	feedForward(input);
 
-	std::vector<std::vector<double>> errors(layers.size());
+	calculateLastLayerError(output);
 
-	calculateLastLayerError(errors, output);
+	calculateInnerLayersError();
 
-	calculateInnerLayersError(errors);
-
-	correctWeightAndBiases(errors);
+	correctWeightAndBiases();
 }
 
 Layer::Layer(size_t size, size_t previousLayerSize)
-	: neurons{ misc::randomVector<Neuron>(size, [=]{ return Neuron(previousLayerSize); })}
+	: neurons( util::randomVector<Neuron>(size, [=]{ return Neuron(previousLayerSize); }) )
+	, errors( size )
 {
 }
 
@@ -192,88 +158,8 @@ std::vector<double> Layer::activations() const
 }
 
 Neuron::Neuron(size_t inputs)
-	: weights{ misc::randomNormalVector(inputs) }
-	, bias { misc::randomNormal() }
+	: weights{ util::randomNormalVector(inputs) }
+	, bias { util::randomNormal() }
 {
 }
 
-
-
-TEST_CASE("random")
-{
-	auto r1 = misc::randomNormal(), r2 = misc::randomNormal();
-	CHECK(r1 != r2);
-
-}
-
-TEST_CASE("architecture")
-{
-	Network n({2, 3, 4});
-	auto arch = n.architecture();
-	CHECK(arch.size() == 3);
-	CHECK(arch == std::vector<std::size_t>{2, 3, 4});
-	CHECK(n.layers[1].neurons[0].weights[0] != n.layers[1].neurons[1].weights[0]);
-
-	CHECK_THROWS(Network{{}});
-}
-
-TEST_CASE("sigmoid")
-{
-	CHECK(misc::sigmoid(-5.) < 0.1);
-	CHECK(misc::sigmoid(5) > 0.9);
-	CHECK(misc::sigmoid(0) == 0.5);
-	CHECK(misc::sigmoidPrime(0) > misc::sigmoidPrime(-1));
-
-}
-
-TEST_CASE("basic feed forward")
-{
-	Network n({2, 2, 1});
-	n.layers[1].neurons[0].weights[0] = 0.5;
-	n.layers[1].neurons[0].weights[1] = 0.5;
-	n.layers[1].neurons[0].bias = -1;
-	n.layers[1].neurons[1].weights[0] = 0.5;
-	n.layers[1].neurons[1].weights[1] = 0.5;
-	n.layers[1].neurons[1].bias = 0.0;
-	n.layers[2].neurons[0].weights[0] = 0.5;
-	n.layers[2].neurons[0].weights[1] = 0.5;
-	n.layers[2].neurons[0].bias = -0.5;
-
-	auto result = n.feedForward({1.0, 1.0});
-	CHECK(result[0] == 0);
-}
-
-TEST_CASE("learn only one sample")
-{
-	Network n({4, 2, 2}, &misc::sigmoid, &misc::sigmoidPrime, 3.);
-
-	std::vector<double> in { 0, 1, 0, 1 };
-	std::vector<double> out { 1, 1 };
-
-	for (int epoch {}; epoch < 10; epoch++)
-	{
-		n.learnOnce(in, out);
-	}
-
-	const auto result = n.feedForward(in);
-	CHECK(result[0] > 0.8);
-	CHECK(result[1] > 0.8);
-}
-
-TEST_CASE("images")
-{
-	Network n({784, 30, 10}, &misc::leakyRelu, &misc::leakyReluPrime, 0.003);
-
-	auto data = mnist::readTrainingData("d:/dev/cpp/handreco-data/");
-
-	const auto& image = data.images.front();
-	const auto& label = misc::vectorized<10>(data.labels.front());
-
-	for (int epoch {}; epoch < 20; epoch++)
-	{
-		n.learnOnce(image, label);
-	}
-
-	const auto result = n.feedForward(image);
-	CHECK(misc::argmax(result) == data.labels.front());
-}

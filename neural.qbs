@@ -2,21 +2,24 @@ import qbs
 
 Project {
 
-    CppApplication {
-        cpp.cxxLanguageVersion: "c++17"
+    property bool withTests: false
 
-        cpp.defines: [ "DOCTEST_CONFIG_DISABLE" ]
+    CppApplication {
+        Depends { name: "Qt"; submodules: ["core", "widgets" ] }
+
+        cpp.defines: [ !withTests ? "DOCTEST_CONFIG_DISABLE" : "" ]
+        cpp.includePaths: [ "3rdparty" ]
+        cpp.cxxLanguageVersion: "c++17"
         cpp.debugInformation: true
 
         consoleApplication: true
-
-        cpp.includePaths: [ "3rdparty" ]
 
         Group {
             name: "3rdparty"
             prefix: "3rdparty/"
             files: "*.h"
         }
+
         Group {
             name: "headers"
             files: "*.h"
@@ -25,6 +28,9 @@ Project {
         Group {
             name: "sources"
             files: "*.cpp"
+            excludeFiles: parent.withTests ? "main.cpp" : "main_test.cpp"
         }
     }
+
+
 }
