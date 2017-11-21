@@ -9,8 +9,6 @@
 
 namespace
 {
-
-
 	mnist::Labels labelsFromFile(const std::string& file)
 	{
 		mnist::Labels labels {};

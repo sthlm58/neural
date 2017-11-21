@@ -1,30 +1,9 @@
 #pragma once
 
-#include <vector>
+#include "mnist_image_defs.h"
 
 namespace mnist
 {
-	constexpr int ImageWidth = 28;
-	constexpr int ImageHeight = 28;
-	constexpr int ImagePixelCount = ImageWidth * ImageHeight;
-
-	using Label = int;
-	using Labels = std::vector<Label>;
-
-	using ImageData = std::vector<double>;
-	using ImagesData = std::vector<ImageData>;
-
-	struct Data
-	{
-		static const std::size_t Inputs = ImagePixelCount;
-		static const std::size_t Outputs = 10;
-
-		ImagesData images;
-		Labels labels;
-	};
-
-	Data readTrainingData(const std::string& directory);
-	Data readTestData(const std::string& directory);
-
+	mnist::Data readTrainingData(const std::string& directory);
+	mnist::Data readTestData(const std::string& directory);
 }
-
