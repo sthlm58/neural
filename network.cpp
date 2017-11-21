@@ -30,12 +30,12 @@ double Network::error(const std::vector<double>& input, const std::vector<double
 {
 	const auto result = feedForward(input);
 
-	auto output_result = util::zip(output, result);
-	const double sum_squared_error = std::accumulate(output_result.begin(), output_result.end(), 0., [](auto acc, auto output_pair)
+	double sum_squared_error = 0.;
+	for (std::size_t i {}; i < result.size(); i++)
 	{
-		const double error = output_pair.first - output_pair.second;
-		return acc + error * error;
-	});
+		const double error = output[i] - result[i];
+		sum_squared_error += error * error;
+	};
 
 	return std::sqrt(sum_squared_error / output.size());
 }

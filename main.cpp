@@ -47,10 +47,10 @@ int main()
 	for (int epoch {}; epoch < 3; epoch++)
 	{
 		auto before = std::chrono::high_resolution_clock::now();
-		for (const auto& learning_sample : util::zip(learning_data, learning_labels))
+		for (std::size_t i {}; i < learning_data.size(); i++)
 		{
-			const auto& image = learning_sample.first;
-			const auto& label = util::vectorized<mnist::Data::Outputs>(learning_sample.second);
+			const auto& image = learning_data[i];
+			const auto& label = util::vectorized<mnist::Data::Outputs>(learning_labels[i]);
 			n.learnOnce(image, label);
 		}
 		auto after = std::chrono::high_resolution_clock::now();
