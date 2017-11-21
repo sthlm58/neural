@@ -22,14 +22,15 @@ Project {
 
         Group {
             name: "headers"
-            files: "*.h"
+            files: [
+                "*.h",
+            ]
         }
 
         Group {
             name: "sources"
             files: [
                 "*.cpp",
-                "network_runner.h",
             ]
             excludeFiles: parent.withTests ? "main.cpp" : "main_test.cpp"
         }

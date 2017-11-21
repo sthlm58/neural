@@ -13,8 +13,8 @@ struct Neuron
 {
 	Neuron(std::size_t inputs = 0);
 
-	mutable double activation {};
-	mutable double z {};
+	double activation {};
+	double z {};
 
 	std::vector<double> weights {};
 	double bias {};
@@ -26,7 +26,7 @@ struct Layer
 {
 	Layer(std::size_t size = 0, std::size_t previousLayerSize = 0);
 
-	void applyActivations(const std::vector<double>& activations) const;
+	void applyActivations(const std::vector<double>& activations);
 	std::vector<double> activations() const;
 
 	std::vector<Neuron> neurons {};
@@ -46,15 +46,15 @@ public:
 	Architecture architecture() const;
 	double error(const std::vector<double>& input, const std::vector<double>& output);
 
-	std::vector<double> feedForward(const std::vector<double>& input) const;
-	void learnOnce(const std::vector<double>& input, const std::vector<double>& output);
+	std::vector<double> feedForward(const std::vector<double>& input);
+	void learnOnce(const std::vector<double>& input, const std::vector<double>& expected);
 
 	std::vector<Layer> layers {};
 
 protected:
 	void calculateLastLayerError(const std::vector<double>& expected);
 	void calculateInnerLayersError();
-	void correctWeightAndBiases();
+	void correctWeightsAndBiases();
 
 private:
 

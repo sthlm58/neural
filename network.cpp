@@ -40,7 +40,7 @@ double Network::error(const std::vector<double>& input, const std::vector<double
 	return std::sqrt(sum_squared_error / output.size());
 }
 
-std::vector<double> Network::feedForward(const std::vector<double>& input) const
+std::vector<double> Network::feedForward(const std::vector<double>& input)
 {
 	layers[0].applyActivations(input);
 
@@ -97,7 +97,7 @@ void Network::calculateInnerLayersError()
 	}
 }
 
-void Network::correctWeightAndBiases()
+void Network::correctWeightsAndBiases()
 {
 	for (int layer = layers.size() - 1; layer >= 1; --layer)
 	{
@@ -121,15 +121,15 @@ void Network::correctWeightAndBiases()
 	}
 }
 
-void Network::learnOnce(const std::vector<double>& input, const std::vector<double>& output)
+void Network::learnOnce(const std::vector<double>& input, const std::vector<double>& expected)
 {
 	feedForward(input);
 
-	calculateLastLayerError(output);
+	calculateLastLayerError(expected);
 
 	calculateInnerLayersError();
 
-	correctWeightAndBiases();
+	correctWeightsAndBiases();
 }
 
 Layer::Layer(size_t size, size_t previousLayerSize)
@@ -138,7 +138,7 @@ Layer::Layer(size_t size, size_t previousLayerSize)
 {
 }
 
-void Layer::applyActivations(const std::vector<double>& activations) const
+void Layer::applyActivations(const std::vector<double>& activations)
 {
 	for (size_t i{}; i < activations.size(); ++i)
 	{

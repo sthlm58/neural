@@ -94,7 +94,7 @@ std::vector<double> asDoubles(T&& container)
 	return doubles;
 }
 
-template <int N>
+template <std::size_t N>
 std::vector<double> vectorized(int i)
 {
 	std::vector<double> v(N, 0.);
@@ -102,9 +102,18 @@ std::vector<double> vectorized(int i)
 	return v;
 }
 
-inline int argmax(const std::vector<double>& vector)
+template <std::size_t N>
+std::array<double, N> arrayized(int i)
 {
-	return std::distance(vector.begin(), std::max_element(vector.begin(), vector.end()));
+	std::array<double, N> v {};
+	v[i] = 1.0;
+	return v;
+}
+
+template <typename Container>
+inline int argmax(const Container& container)
+{
+	return std::distance(container.begin(), std::max_element(container.begin(), container.end()));
 }
 
 inline double randomNormal()

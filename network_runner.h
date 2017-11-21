@@ -1,6 +1,8 @@
 #pragma once
 
 #include "network.h"
+#include "static_network.h"
+
 #include "mnist_reader.h"
 #include "mnist_custom_reader.h"
 #include "util.h"
@@ -9,7 +11,8 @@
 #include <iostream>
 #include <iomanip>
 
-std::pair<std::size_t, std::size_t> results(const Network& n, const std::vector<std::vector<double>>& input, const std::vector<int>& labels)
+template <typename NetworkType>
+std::pair<std::size_t, std::size_t> results(NetworkType& n, const std::vector<std::vector<double>>& input, const std::vector<int>& labels)
 {
 	std::size_t correct {};
 	for (std::size_t d{}; d < input.size(); ++d)
@@ -27,14 +30,12 @@ std::pair<std::size_t, std::size_t> results(const Network& n, const std::vector<
 }
 
 
-void run_network()
+
+template <typename NetworkType>
+void run_network(NetworkType& n)
 {
 	auto data = mnist::readTrainingData("d:/dev/cpp/handreco-data/");
 
-	static const std::size_t HIDDEN_UNITS = 50;
-	static const double LEARNING_FACTOR = 0.003;
-	Network n({mnist::Data::Inputs, HIDDEN_UNITS, mnist::Data::Outputs},
-			  util::leakyRelu, util::leakyReluPrime, LEARNING_FACTOR);
 
 	static const std::size_t LEARNING_SAMPLES = 50000;
 
@@ -64,4 +65,21 @@ void run_network()
 	auto own = mnist::custom::readImagesMatching("d:/dev/cpp/handreco-data", "?__*.*");
 	auto own_results = results(n, own.images, own.labels);
 	std::cout << "own images: " << own_results.first << "/" << own_results.second << std::endl;
+}
+
+void run_dynamic_network()
+{
+	static const std::size_t HIDDEN_UNITS = 50;
+	static const double LEARNING_FACTOR = 0.003;
+	Network n({mnist::Data::Inputs, HIDDEN_UNITS, mnist::Data::Outputs},
+			  util::leakyRelu, util::leakyReluPrime, LEARNING_FACTOR);
+
+	run_network(n);
+}
+
+void run_static_network()
+{
+	StaticNetwork<784, 50, 10, &util::leakyRelu, &util::leakyReluPrime, 3> n;
+
+	run_network(n);
 }
