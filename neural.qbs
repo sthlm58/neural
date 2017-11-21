@@ -27,7 +27,10 @@ Project {
 
         Group {
             name: "sources"
-            files: "*.cpp"
+            files: [
+                "*.cpp",
+                "network_runner.h",
+            ]
             excludeFiles: parent.withTests ? "main.cpp" : "main_test.cpp"
         }
     }
