@@ -7,6 +7,8 @@
 // hello MSVC
 #include <intrin.h>
 
+#pragma optimize( "", on )
+
 namespace
 {
 	mnist::Labels labelsFromFile(const std::string& file)

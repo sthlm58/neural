@@ -41,25 +41,37 @@ public:
 	Network(const Architecture& architecture,
 			ActivationFunction activation = &util::identity,
 			ActivationFunction activationDerivative = &util::identityPrime,
-			double learningRate = 0.3);
+			double learningRate = 0.3,
+			std::size_t batchSize = 1);
 
 	Architecture architecture() const;
 	double error(const std::vector<double>& input, const std::vector<double>& output);
+
+	struct LayerCorrection {
+		struct NeuronCorrections {
+			std::vector<double> weights {};
+			double bias {};
+		};
+		std::vector<NeuronCorrections> neurons {};
+	};
+
 
 	std::vector<double> feedForward(const std::vector<double>& input);
 	void learnOnce(const std::vector<double>& input, const std::vector<double>& expected);
 
 	std::vector<Layer> layers {};
+	std::vector<LayerCorrection> corrections {};
 
-protected:
 	void calculateLastLayerError(const std::vector<double>& expected);
 	void calculateInnerLayersError();
-	void correctWeightsAndBiases();
+	void updateWeightsAndBiases(std::vector<LayerCorrection>& updates);
+	void correctWeightsAndBiases(std::vector<LayerCorrection>& updates);
+	void clearErrors();
 
 private:
 
 	ActivationFunction activationFunction {};
 	ActivationFunction activationFunctionDerivative {};
 	double learningRate {};
-
+	std::size_t batchSize {};
 };
